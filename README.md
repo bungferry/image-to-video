@@ -16,7 +16,7 @@ Banyak platform seperti **Instagram Reels, WhatsApp Status, dan Facebook Link Po
 
 * **1:1 (Square):** Standar universal yang aman.
 
-1. **Kontrol Durasi Penuh:** Tentukan durasi video yang Anda inginkan, dari **5** detik hingga **60** detik, sesuai kebutuhan iklan atau konten Anda.
+2. **Kontrol Durasi Penuh:** Tentukan durasi video yang Anda inginkan, dari **5** detik hingga **60** detik, sesuai kebutuhan iklan atau konten Anda.
 
 1. **Kualitas Tetap Terjaga:** Menggunakan **FFmpeg** di backend (di Netlify Lambda), proses konversi dijamin menghasilkan video **MP4 (H.264)** dengan kualitas terbaik, tanpa distorsi atau stretching berkat filter scaling dan padding otomatis.
 
