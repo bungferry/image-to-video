@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegPath from "ffmpeg-static";
+import { PassThrough } from "stream";
 
 export const handler = async (event) => {
   try {
@@ -12,10 +13,19 @@ export const handler = async (event) => {
     const inputPath = path.join(tmpDir, `input-${Date.now()}.jpg`);
     const outputPath = path.join(tmpDir, `output-${Date.now()}.mp4`);
 
-    // Parse multipart form
+    if (!event.body) throw new Error("Tidak ada body di request.");
+
+    // Decode Base64 body
+    const buffer = Buffer.from(event.body, event.isBase64Encoded ? "base64" : "utf8");
+
+    // Simulasikan stream untuk formidable
+    const stream = new PassThrough();
+    stream.end(buffer);
+
     const form = new IncomingForm({ multiples: false, keepExtensions: true });
+
     const { fields, files } = await new Promise((resolve, reject) => {
-      form.parse(event.body, (err, fields, files) => {
+      form.parse(stream, (err, fields, files) => {
         if (err) reject(err);
         else resolve({ fields, files });
       });
@@ -27,7 +37,6 @@ export const handler = async (event) => {
 
     const duration = fields.duration ? Number(fields.duration) : 5;
 
-    // Proses ffmpeg
     await new Promise((resolve, reject) => {
       ffmpeg(inputPath)
         .loop(duration)
