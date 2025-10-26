@@ -1,36 +1,27 @@
 import fs from "fs";
 import path from "path";
 import ffmpeg from "fluent-ffmpeg";
-import ffmpegStatic from "ffmpeg-static"; // Ubah penamaan import agar lebih jelas
+import ffmpegStatic from "ffmpeg-static";
 
 // --- Logika Penyesuaian Jalur FFmpeg untuk Netlify Lambda ---
 let ffmpegPath = ffmpegStatic;
 
-// Jika kode berjalan di lingkungan AWS Lambda (Netlify), sesuaikan jalur
 if (process.env.LAMBDA_TASK_ROOT) {
-    // Jalur biner yang seringkali digunakan setelah Netlify membundel ffmpeg-static
+    // Cari biner di tempat yang diharapkan oleh Lambda setelah bundling
     const functionRoot = process.env.LAMBDA_TASK_ROOT;
     const binPath = path.join(functionRoot, 'node_modules', 'ffmpeg-static', 'ffmpeg');
     
-    // Gunakan binPath jika ada, jika tidak, gunakan default ffmpegStatic
+    // Periksa dan gunakan jalur yang sudah di-deploy
     if (fs.existsSync(binPath)) {
         ffmpegPath = binPath;
     }
 }
+// Hapus kode fs.chmodSync karena EROFS (Read-Only)
 
-// Atur jalur FFmpeg
 ffmpeg.setFfmpegPath(ffmpegPath);
-
-// Berikan izin eksekusi (chmod) karena sering hilang saat di-deploy
-try {
-    fs.chmodSync(ffmpegPath, '755');
-} catch (e) {
-    console.error("Gagal mengatur izin eksekusi (chmod) FFmpeg:", e.message);
-}
 // -----------------------------------------------------------
 
 export const handler = async (event) => {
-  // Variabel untuk melacak file agar bisa dihapus meskipun terjadi error
   let inputPath = null;
   let outputPath = null;
 
@@ -54,26 +45,24 @@ export const handler = async (event) => {
     // Proses ffmpeg
     await new Promise((resolve, reject) => {
       ffmpeg(inputPath)
-        // Gunakan input options yang lebih andal untuk gambar diam
         .inputOptions([
-          "-loop 1",       // Loop gambar
-          "-t " + dur,     // Durasi video
-          "-framerate 25", // Framerate input
+          "-loop 1",
+          "-t " + dur,
+          "-framerate 25",
         ])
         .videoCodec("libx264")
         .size("1920x1080")
         .outputOptions([
-          "-preset veryfast", // Optimasi kecepatan konversi
+          "-preset veryfast",
           "-pix_fmt yuv420p",
-          // Scale/pad untuk memastikan gambar pas di 1920x1080 tanpa distorsi
-          "-vf scale='min(1920,iw):min(1080,ih):force_original_aspect_ratio=decrease,pad=1920:1080:-1:-1:color=black'"
+          // PERBAIKAN SINTAKS VF: Hapus tanda kutip tunggal ('') yang tidak perlu
+          "-vf scale=min(1920,iw):min(1080,ih):force_original_aspect_ratio=decrease,pad=1920:1080:-1:-1:color=black"
         ])
         .save(outputPath)
         .on("end", () => {
           console.log("FFmpeg Selesai.");
           resolve();
         })
-        // Tangani error dengan mencatat stdout/stderr
         .on("error", (err, stdout, stderr) => {
           console.error("FFmpeg Error:", err.message);
           console.error("FFmpeg Stdout:", stdout);
@@ -98,7 +87,6 @@ export const handler = async (event) => {
       body: JSON.stringify({ error: err.message || "Kesalahan Server Internal." }),
     };
   } finally {
-    // Pastikan file sementara dihapus
     if (inputPath && fs.existsSync(inputPath)) {
       fs.unlinkSync(inputPath);
     }
