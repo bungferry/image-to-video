@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "formidable": "^3.5.1",
     "fluent-ffmpeg": "^2.1.2",
     "ffmpeg-static": "^5.2.0"
   }
