@@ -17,7 +17,7 @@
         flex-direction:column; 
         align-items:center; 
         justify-content:center; 
-        min-height:100%; 
+        min-height:100vh; 
         margin:0; 
         padding: 20px;
     }
@@ -115,33 +115,40 @@
         font-weight: bold;
     }
 
-    /* KONTROL TOMBOL UNDUH IKON */
-    #downloadButton { 
+    /* KONTROL TOMBOL UNDUH DAN BAGIKAN (CONTAINER) */
+    .action-buttons {
+        position: absolute; 
+        bottom: 15px; /* Posisi di bawah */
+        right: 15px;  /* Posisi di kanan */
+        display: flex;
+        gap: 8px;
+        z-index: 10; 
+    }
+    
+    /* GAYA TOMBOL (Unduh & Bagikan) */
+    .action-buttons button { 
         background: rgba(255, 255, 255, 0.7);
         border: none; 
         color: #121212; 
         padding: 0; 
-        width: 40px; 
-        height: 40px;
+        width: 30px; /* Ukuran Baru */
+        height: 30px; /* Ukuran Baru */
         border-radius: 50%; 
         cursor: pointer; 
-        font-size: 1.2em;
+        font-size: 1em; /* Ukuran ikon disesuaikan */
         display: flex;
         align-items: center;
         justify-content: center;
-        position: absolute; 
-        top: 15px; 
-        right: 15px;
-        z-index: 10; 
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         transition: background 0.3s ease;
     }
-    #downloadButton:hover {
+    .action-buttons button:hover {
         background: rgba(255, 255, 255, 0.9);
     }
-    #downloadButton:disabled { background:#ccc; cursor:not-allowed; color: #666; }
+    .action-buttons button:disabled { background:#ccc; cursor:not-allowed; color: #666; }
 
-    /* LAYOUT KONTROL BARU */
+
+    /* LAYOUT KONTROL BAWAH */
     .controls-container {
         display: flex;
         align-items: center;
@@ -235,7 +242,11 @@
                 <span id="processingStatusText">Sedang diproses, tunggu sebentar...</span>
             </div>
 
-            <button id="downloadButton" style="display: none;"><i class="fas fa-download"></i></button>
+            <div class="action-buttons" id="actionButtons" style="display: none;">
+                <button id="shareButton" title="Bagikan Video"><i class="fas fa-share-alt"></i></button>
+                <button id="downloadButton" title="Unduh Video"><i class="fas fa-download"></i></button>
+            </div>
+
         </div>
         
         <div class="controls-container">
@@ -247,12 +258,12 @@
                     <label for="resolution">Rasio Aspek</label>
                     <select id="resolution">
                         
-                        <option value="1200x630">Facebook</option>
-                        <option value="1080x1350">Instagram</option>
-                        <option value="1080x1920">TikTok/WhatsApp)</option>
+                        <option value="1200x630">Facebook (1.91:1 - Link)</option>
+                        <option value="1080x1350">Instagram (4:5 - Feed)</option>
+                        <option value="1080x1920">9:16 (Reels/Status)</option>
                         
-                        <option value="1080x1080">1:1 Square</option>
-                        <option value="1920x1080">YouTube</option>
+                        <option value="1080x1080">1:1 (Square - Universal)</option>
+                        <option value="1920x1080">16:9 (YouTube/Landscape)</option>
                     </select>
                 </div>
                 
@@ -285,7 +296,12 @@
     const initialContent = document.getElementById("initialContent");
     const previewImage = document.getElementById("previewImage");
     const videoPreview = document.getElementById("videoPreview");
+    
+    // Tombol Aksi Baru
+    const actionButtonsContainer = document.getElementById("actionButtons"); // Kontainer
     const downloadButton = document.getElementById("downloadButton"); 
+    const shareButton = document.getElementById("shareButton"); 
+    
     const processingOverlay = document.getElementById("processingOverlay"); 
 
     // --- State & Utility ---
@@ -304,7 +320,9 @@
       videoPreview.removeAttribute('src');
       videoPreview.load();
       videoPreview.removeAttribute('poster'); 
-      downloadButton.style.display = 'none'; 
+      
+      actionButtonsContainer.style.display = 'none'; // Sembunyikan kontainer tombol
+      
       processingOverlay.style.display = 'none'; 
       
       // Pastikan border muncul kembali saat cleanup
@@ -369,6 +387,35 @@
         }
     }, false);
 
+
+    // --- Logika Tombol Bagikan Baru ---
+    shareButton.onclick = () => {
+        if (!videoUrl) {
+            alert("Video belum tersedia untuk dibagikan.");
+            return;
+        }
+
+        // Ambil Blob video dari URL untuk dibagikan
+        fetch(videoUrl)
+            .then(res => res.blob())
+            .then(blob => {
+                const file = new File([blob], 'video-konversi.mp4', { type: 'video/mp4' });
+                
+                if (navigator.share && navigator.canShare({ files: [file] })) {
+                    // Menggunakan Web Share API
+                    navigator.share({
+                        files: [file],
+                        title: 'Video Konversi',
+                        text: 'Cek video keren yang saya buat!',
+                    })
+                    .catch((error) => console.error('Error sharing:', error));
+                } else {
+                    alert("Browser Anda tidak mendukung Web Share API untuk file. Silakan unduh manual.");
+                }
+            })
+            .catch(err => alert("Gagal mengambil data video untuk dibagikan."));
+    };
+    
     // --- Event Listeners Konversi ---
     convertBtn.onclick = async () => {
       if (!selectedFile) { alert("Pilih atau drop gambar dulu!"); return; }
@@ -420,13 +467,13 @@
           setTimeout(() => {
               videoPreview.style.display = 'block';
               previewImage.style.display = 'none'; 
-              downloadButton.style.display = 'flex'; 
-              dropArea.classList.add('disabled'); 
               
-              // Sembunyikan BORDER saat preview sukses muncul
+              actionButtonsContainer.style.display = 'flex'; // Tampilkan kontainer tombol
+              
+              dropArea.classList.add('disabled'); 
               dropArea.classList.add('border-hidden');
               
-              statusEl.textContent = "✅ Selesai! Video siap di-preview dan diunduh.";
+              statusEl.textContent = "✅ Selesai! Video siap di-preview dan diunduh/dibagikan.";
           }, 50);
 
           downloadButton.onclick = () => {
@@ -440,8 +487,6 @@
           processingOverlay.style.display = 'none'; 
           statusEl.textContent = "❌ Terjadi kesalahan: " + err.message;
           dropArea.classList.remove('disabled'); 
-          
-          // Pastikan border muncul lagi jika error
           dropArea.classList.remove('border-hidden'); 
           
           if (previewImage.src) {
