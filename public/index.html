@@ -4,8 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Konversi Gambar ke Video (.mp4)</title>
+  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  
   <style>
+    /* 1. Layout Responsif */
     body { 
         font-family: system-ui, sans-serif; 
         background:#121212; 
@@ -36,6 +39,7 @@
     }
     h2 { margin-top: 0; text-align: center; }
 
+    /* 2. Drop Area/Preview Container (Rasio 1:1) */
     #dropArea {
         border: 2px dashed #0078ff;
         border-radius: 8px;
@@ -70,8 +74,10 @@
         transition: opacity 0.3s;
     }
 
+    /* Input File tersembunyi */
     #image { display: none; } 
 
+    /* Preview Gambar/Video */
     #previewImage, #videoPreview {
         position: absolute;
         top: 0;
@@ -88,26 +94,43 @@
         object-fit: cover;
     }
 
-    /* KONTROL BARU UNTUK TOMBOL UNDUH */
-    #downloadButton { 
-        background: rgba(255, 255, 255, 0.7); /* Putih transparan */
-        border: none; 
-        color: #121212; /* Warna teks ikon hitam */
-        padding: 0; /* Hapus padding default */
-        width: 40px; 
-        height: 40px;
-        border-radius: 50%; /* Bentuk bulat */
-        cursor: pointer; 
-        font-size: 1.2em; /* Ukuran ikon */
-        display: flex; /* Untuk menengahkan ikon */
+    /* KONTROL STATUS PROSES DI TENGAH PREVIEW */
+    #processingOverlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8); /* Background hitam semi-transparan */
+        color: white;
+        display: none; /* Awalnya tersembunyi */
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        
-        /* POSISI: pojok kanan atas */
+        z-index: 15;
+        border-radius: 8px;
+        font-size: 1.1em;
+        font-weight: bold;
+    }
+
+    /* KONTROL TOMBOL UNDUH IKON */
+    #downloadButton { 
+        background: rgba(255, 255, 255, 0.7);
+        border: none; 
+        color: #121212; 
+        padding: 0; 
+        width: 40px; 
+        height: 40px;
+        border-radius: 50%; 
+        cursor: pointer; 
+        font-size: 1.2em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         position: absolute; 
         top: 15px; 
         right: 15px;
-        z-index: 10; /* Pastikan di atas video */
+        z-index: 10; 
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         transition: background 0.3s ease;
     }
@@ -144,6 +167,8 @@
         margin-top: 15px;
     }
     #convertBtn:disabled { background:#555; cursor:not-allowed; }
+    
+    /* Status bawah tetap di posisinya */
     .progress { margin-top:15px; font-size:0.9em; opacity:0.8; }
   </style>
 </head>
@@ -164,6 +189,11 @@
             <img id="previewImage" src="" alt="Preview Gambar" />
             <video id="videoPreview" controls muted></video>
             
+            <div id="processingOverlay">
+                <i class="fas fa-spinner fa-spin" style="margin-bottom: 10px;"></i>
+                <span id="processingStatusText">Sedang diproses, tunggu sebentar...</span>
+            </div>
+
             <button id="downloadButton" style="display: none;"><i class="fas fa-download"></i></button>
         </div>
 
@@ -192,20 +222,22 @@
         </div>
     </div>
 
-  </div> 
-  <script>
+  </div> <script>
     // --- Elemen DOM ---
     const convertBtn = document.getElementById("convertBtn");
     const imageInput = document.getElementById("image");
     const durationInput = document.getElementById("duration");
     const resolutionInput = document.getElementById("resolution");
     const durValue = document.getElementById("durValue");
-    const statusEl = document.getElementById("status");
+    const statusEl = document.getElementById("status"); // Status bawah (Sukses/Error)
     const dropArea = document.getElementById("dropArea");
     const initialContent = document.getElementById("initialContent");
     const previewImage = document.getElementById("previewImage");
     const videoPreview = document.getElementById("videoPreview");
     const downloadButton = document.getElementById("downloadButton"); 
+    
+    // Elemen Overlay Baru
+    const processingOverlay = document.getElementById("processingOverlay"); 
 
     // --- State & Utility ---
     let selectedFile = null;
@@ -222,13 +254,14 @@
       videoPreview.pause();
       videoPreview.removeAttribute('src');
       videoPreview.load();
-      // Hapus poster untuk mencegah flickering pada loading berikutnya
       videoPreview.removeAttribute('poster'); 
       downloadButton.style.display = 'none'; 
+      processingOverlay.style.display = 'none'; // Sembunyikan overlay proses
       
-      if (!selectedFile) { // Hanya aktifkan dropArea jika tidak ada file yang dipilih
+      if (!selectedFile) {
         dropArea.classList.remove('disabled');
         initialContent.style.display = 'flex';
+        statusEl.textContent = "Pilih gambar dan atur opsi konversi."; // Reset status bawah
       }
     };
 
@@ -241,7 +274,6 @@
         cleanup(); 
         selectedFile = file;
         
-        // Tampilkan preview gambar
         const reader = new FileReader();
         reader.onload = (e) => {
             previewImage.src = e.target.result;
@@ -264,7 +296,6 @@
         }
     });
 
-    // Mencegah default behavior saat drag & drop
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
       dropArea.addEventListener(eventName, preventDefaults, false);
       if (!dropArea.classList.contains('disabled')) {
@@ -292,7 +323,6 @@
     convertBtn.onclick = async () => {
       if (!selectedFile) { alert("Pilih atau drop gambar dulu!"); return; }
 
-      // 1. Buat Promise untuk mendapatkan Base64 Poster sebelum proses utama
       const posterBase64 = await new Promise((resolve, reject) => {
           const tempReader = new FileReader();
           tempReader.onload = () => resolve(tempReader.result);
@@ -302,7 +332,10 @@
 
       cleanup(); 
       convertBtn.disabled = true;
-      statusEl.textContent = "⏳ Sedang diproses, tunggu sebentar...";
+      
+      // Tampilkan Overlay Proses di tengah Preview
+      processingOverlay.style.display = 'flex'; 
+      statusEl.textContent = ""; // Kosongkan status di bawah card
 
       const reader = new FileReader();
       reader.onload = async () => {
@@ -328,13 +361,12 @@
           const blob = await res.blob();
           videoUrl = URL.createObjectURL(blob);
           
-          // 2. Set Poster Gambar (menggunakan gambar asli untuk mencegah kelip)
-          videoPreview.poster = posterBase64; 
+          // Sembunyikan Overlay Proses sebelum menampilkan video
+          processingOverlay.style.display = 'none';
           
-          // 3. Set Sumber Video
+          videoPreview.poster = posterBase64; 
           videoPreview.src = videoUrl;
           
-          // 4. Gunakan setTimeout untuk memberi waktu browser merender (mencegah kelip)
           setTimeout(() => {
               videoPreview.style.display = 'block';
               previewImage.style.display = 'none'; 
@@ -342,9 +374,8 @@
               dropArea.classList.add('disabled'); 
 
               statusEl.textContent = "✅ Selesai! Video siap di-preview dan diunduh.";
-          }, 50); // Jeda 50ms
+          }, 50);
 
-          // Atur fungsi unduh
           downloadButton.onclick = () => {
             const a = document.createElement("a");
             a.href = videoUrl;
@@ -353,6 +384,7 @@
           };
 
         } catch (err) {
+          processingOverlay.style.display = 'none'; 
           statusEl.textContent = "❌ Terjadi kesalahan: " + err.message;
           dropArea.classList.remove('disabled'); 
           if (previewImage.src) {
@@ -364,6 +396,6 @@
       };
       reader.readAsDataURL(selectedFile);
     };
-    </script>
+  </script>
 </body>
   </html>
