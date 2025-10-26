@@ -222,6 +222,8 @@
       videoPreview.pause();
       videoPreview.removeAttribute('src');
       videoPreview.load();
+      // Hapus poster untuk mencegah flickering pada loading berikutnya
+      videoPreview.removeAttribute('poster'); 
       downloadButton.style.display = 'none'; 
       
       if (!selectedFile) { // Hanya aktifkan dropArea jika tidak ada file yang dipilih
@@ -239,6 +241,7 @@
         cleanup(); 
         selectedFile = file;
         
+        // Tampilkan preview gambar
         const reader = new FileReader();
         reader.onload = (e) => {
             previewImage.src = e.target.result;
@@ -261,9 +264,10 @@
         }
     });
 
+    // Mencegah default behavior saat drag & drop
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
       dropArea.addEventListener(eventName, preventDefaults, false);
-      if (!dropArea.classList.contains('disabled')) { // Hanya tambahkan ini jika dropArea tidak disabled
+      if (!dropArea.classList.contains('disabled')) {
         document.body.addEventListener(eventName, preventDefaults, false);
       }
     });
@@ -288,9 +292,17 @@
     convertBtn.onclick = async () => {
       if (!selectedFile) { alert("Pilih atau drop gambar dulu!"); return; }
 
+      // 1. Buat Promise untuk mendapatkan Base64 Poster sebelum proses utama
+      const posterBase64 = await new Promise((resolve, reject) => {
+          const tempReader = new FileReader();
+          tempReader.onload = () => resolve(tempReader.result);
+          tempReader.onerror = reject;
+          tempReader.readAsDataURL(selectedFile);
+      });
+
       cleanup(); 
       convertBtn.disabled = true;
-      statusEl.textContent = "⏳ Sedang diproses...";
+      statusEl.textContent = "⏳ Sedang diproses, tunggu sebentar...";
 
       const reader = new FileReader();
       reader.onload = async () => {
@@ -316,20 +328,27 @@
           const blob = await res.blob();
           videoUrl = URL.createObjectURL(blob);
           
-          // Tampilkan Video Preview
+          // 2. Set Poster Gambar (menggunakan gambar asli untuk mencegah kelip)
+          videoPreview.poster = posterBase64; 
+          
+          // 3. Set Sumber Video
           videoPreview.src = videoUrl;
-          videoPreview.style.display = 'block';
-          previewImage.style.display = 'none'; 
-          downloadButton.style.display = 'flex'; // Gunakan flex untuk menengahkan ikon
-          dropArea.classList.add('disabled'); 
+          
+          // 4. Gunakan setTimeout untuk memberi waktu browser merender (mencegah kelip)
+          setTimeout(() => {
+              videoPreview.style.display = 'block';
+              previewImage.style.display = 'none'; 
+              downloadButton.style.display = 'flex'; 
+              dropArea.classList.add('disabled'); 
 
-          statusEl.textContent = "✅ Selesai! Video siap di-preview dan diunduh.";
+              statusEl.textContent = "✅ Selesai! Video siap di-preview dan diunduh.";
+          }, 50); // Jeda 50ms
 
           // Atur fungsi unduh
           downloadButton.onclick = () => {
             const a = document.createElement("a");
             a.href = videoUrl;
-            a.download = `video-${selectedResolution}-${durationInput.value}s.mp4`; // Nama file lebih informatif
+            a.download = `video-${selectedResolution}-${durationInput.value}s.mp4`; 
             a.click();
           };
 
@@ -345,6 +364,6 @@
       };
       reader.readAsDataURL(selectedFile);
     };
-  </script>
+    </script>
 </body>
   </html>
