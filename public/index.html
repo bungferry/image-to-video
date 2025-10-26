@@ -216,7 +216,8 @@
     
     /* Status bawah */
     .progress { margin-top:15px; font-size:0.9em; opacity:0.7; color: #333; }
-    
+    #app-footer { margin-top: 40px; font-size: 0.85em; color: #666; }
+  
     /* Adaptasi responsif */
     @media (max-width: 600px) {
         .controls-container {
@@ -321,7 +322,9 @@
     
     <div class="card" style="display:none;"></div> 
 
-  </div> <script>
+  </div> 
+  <p id="app-footer"> &copy; <script>document.write(new Date().getFullYear())</script> Konversi Video Sederhana | Powered by Ferry Ayunda. </p>
+  <script>
     // --- Elemen DOM ---
     const convertBtn = document.getElementById("convertBtn");
     const imageInput = document.getElementById("image");
