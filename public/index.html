@@ -7,19 +7,29 @@
   <style>
     body { font-family: system-ui, sans-serif; background:#121212; color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; margin:0; }
     .card { background:#1e1e1e; padding:20px; border-radius:12px; width:90%; max-width:400px; text-align:center; }
-    input[type="file"] { display:block; margin:10px auto; }
+    input[type="file"], select { display:block; margin:10px auto; width:100%; padding: 8px; border-radius: 4px; border: 1px solid #333; background: #333; color: white; box-sizing: border-box; }
     input[type="range"] { width:100%; }
     button { background:#0078ff; border:none; color:white; padding:10px 20px; border-radius:8px; cursor:pointer; margin-top:10px; width:100%; }
     button:disabled { background:#555; cursor:not-allowed; }
     .progress { margin-top:15px; font-size:0.9em; opacity:0.8; }
+    label { display: block; margin-top: 10px; text-align: left; }
   </style>
 </head>
 <body>
   <div class="card">
     <h2>🎞️ Konversi Gambar ke Video</h2>
     <input type="file" id="image" accept="image/*" />
+    
+    <label for="resolution">Pilih Rasio Aspek:</label>
+    <select id="resolution">
+      <option value="1920x1080">16:9 (1920x1080 - YouTube)</option>
+      <option value="1080x1080">1:1 (1080x1080 - Instagram Square)</option>
+      <option value="1080x1920">9:16 (1080x1920 - Reels/TikTok)</option>
+    </select>
+    
     <label>Durasi video (detik): <span id="durValue">5</span></label>
     <input type="range" id="duration" min="1" max="60" value="5" />
+    
     <button id="convertBtn">Convert ke Video</button>
     <div class="progress" id="status"></div>
   </div>
@@ -28,6 +38,7 @@
     const convertBtn = document.getElementById("convertBtn");
     const imageInput = document.getElementById("image");
     const durationInput = document.getElementById("duration");
+    const resolutionInput = document.getElementById("resolution"); // Ambil input resolusi
     const durValue = document.getElementById("durValue");
     const statusEl = document.getElementById("status");
 
@@ -43,11 +54,19 @@
       const reader = new FileReader();
       reader.onload = async () => {
         const base64 = reader.result.split(",")[1];
+        
+        // Dapatkan resolusi yang dipilih (misalnya: "1080x1920")
+        const selectedResolution = resolutionInput.value; 
+
         try {
           const res = await fetch("/.netlify/functions/generate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ imageBase64: base64, duration: durationInput.value })
+            body: JSON.stringify({ 
+              imageBase64: base64, 
+              duration: durationInput.value,
+              resolution: selectedResolution // Kirim resolusi ke backend
+            })
           });
 
           if (!res.ok) throw new Error("Gagal mengonversi video");
@@ -70,4 +89,4 @@
     };
   </script>
 </body>
-</html>
+  </html>
