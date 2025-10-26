@@ -29,8 +29,11 @@
         background:#1e1e1e; 
         padding:20px; 
         border-radius:12px; 
-        flex: 1 1 300px; /* Fleksibel untuk layar kecil */
+        flex: 1 1 300px; 
         min-width: 300px;
+        /* Tambahkan min-height dan overflow:visible agar konten panjang dapat diakomodasi */
+        min-height: 200px; 
+        box-sizing: border-box;
     }
     h2 { margin-top: 0; text-align: center; }
 
@@ -40,17 +43,16 @@
         border-radius: 8px;
         color: #aaa;
         cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        /* Hapus display:flex, atur display:block */
+        display: block; 
         text-align: center;
-        padding: 10px;
         margin-bottom: 20px;
         position: relative;
         overflow: hidden;
-        /* Membuat rasio aspek 1:1 */
+        /* MENGAMANKAN RASIO ASPEK 1:1 */
         width: 100%;
         padding-top: 100%; 
+        /* Pastikan konten yang menggunakan position:absolute terikat ke elemen ini */
     }
     #dropArea:not(.disabled):hover {
         background: #2a2a2a;
@@ -64,7 +66,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        display: flex;
+        display: flex; /* Kembalikan flex di sini */
         flex-direction: column;
         align-items: center;
         justify-content: center;
@@ -83,12 +85,14 @@
         left: 0;
         width: 100%;
         height: 100%;
-        object-fit: contain; /* Agar gambar tidak terpotong */
         border-radius: 8px;
         display: none;
     }
+    #previewImage {
+        object-fit: contain;
+    }
     #videoPreview {
-        object-fit: cover; /* Video cover agar 1:1 penuh */
+        object-fit: cover;
     }
 
     /* 4. Kontrol (Input dan Tombol) */
@@ -117,7 +121,17 @@
         font-weight: bold;
     }
     #convertBtn { background:#0078ff; margin-top: 15px; }
-    #downloadButton { background: #00cc66; }
+    #downloadButton { 
+        background: #00cc66; 
+        /* Tombol unduh harus ada di atas video preview, 
+           dan kita atur posisinya relatif terhadap dropArea */
+        position: absolute; 
+        bottom: 15px; 
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80%;
+        z-index: 10;
+    }
     button:disabled { background:#555; cursor:not-allowed; }
     .progress { margin-top:15px; font-size:0.9em; opacity:0.8; }
   </style>
@@ -139,9 +153,7 @@
             <img id="previewImage" src="" alt="Preview Gambar" />
             <video id="videoPreview" controls muted></video>
             
-            <div id="downloadContainer" style="display: none;">
-                <button id="downloadButton">⬇️ Unduh Video</button>
-            </div>
+            <button id="downloadButton" style="display: none;">⬇️ Unduh Video</button>
         </div>
 
         <div class="progress" id="status">Pilih gambar dan atur opsi konversi.</div>
@@ -181,8 +193,7 @@
     const initialContent = document.getElementById("initialContent");
     const previewImage = document.getElementById("previewImage");
     const videoPreview = document.getElementById("videoPreview");
-    const downloadContainer = document.getElementById("downloadContainer");
-    const downloadButton = document.getElementById("downloadButton");
+    const downloadButton = document.getElementById("downloadButton"); // Langsung ambil tombol
 
     // --- State & Utility ---
     let selectedFile = null;
@@ -199,9 +210,8 @@
       videoPreview.pause();
       videoPreview.removeAttribute('src');
       videoPreview.load();
-      downloadContainer.style.display = 'none';
+      downloadButton.style.display = 'none'; // Sembunyikan tombol unduh
       
-      // Pastikan drop area diaktifkan kembali jika tidak ada file yang dipilih
       if (!selectedFile) {
         dropArea.classList.remove('disabled');
         initialContent.style.display = 'flex';
@@ -214,7 +224,7 @@
             return;
         }
         
-        cleanup(); // Bersihkan preview video
+        cleanup(); 
         selectedFile = file;
         
         // Tampilkan preview gambar
@@ -222,7 +232,7 @@
         reader.onload = (e) => {
             previewImage.src = e.target.result;
             previewImage.style.display = 'block';
-            initialContent.style.display = 'none'; // Sembunyikan prompt drop
+            initialContent.style.display = 'none';
         };
         reader.readAsDataURL(file);
     };
@@ -298,9 +308,9 @@
           // Tampilkan Video Preview
           videoPreview.src = videoUrl;
           videoPreview.style.display = 'block';
-          previewImage.style.display = 'none'; // Sembunyikan preview gambar
-          downloadContainer.style.display = 'block';
-          dropArea.classList.add('disabled'); // 3. Nonaktifkan drop area saat preview aktif
+          previewImage.style.display = 'none'; 
+          downloadButton.style.display = 'block'; // Tampilkan tombol unduh
+          dropArea.classList.add('disabled'); // Nonaktifkan drop area saat preview aktif
 
           statusEl.textContent = "✅ Selesai! Video siap di-preview dan diunduh.";
 
@@ -314,8 +324,8 @@
 
         } catch (err) {
           statusEl.textContent = "❌ Terjadi kesalahan: " + err.message;
-          dropArea.classList.remove('disabled'); // Aktifkan kembali jika error
-          if (previewImage.src) { // Jika ada gambar, tampilkan lagi
+          dropArea.classList.remove('disabled'); 
+          if (previewImage.src) {
               previewImage.style.display = 'block';
           }
         } finally {
