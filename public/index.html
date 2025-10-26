@@ -17,7 +17,7 @@
         flex-direction:column; 
         align-items:center; 
         justify-content:center; 
-        min-height:100%; 
+        min-height:100vh; 
         margin:0; 
         padding: 20px;
     }
@@ -42,7 +42,7 @@
 
     /* 2. Drop Area/Preview Container (Rasio 1:1) */
     #dropArea {
-        border: 2px dashed #0078ff; /* Border default */
+        border: 2px dashed #0078ff; 
         border-radius: 8px;
         color: #666; 
         cursor: pointer;
@@ -56,7 +56,7 @@
         transition: border 0.2s ease-in-out;
     }
     
-    /* GAYA BARU: Hilangkan border saat preview muncul */
+    /* Hilangkan border saat preview muncul */
     #dropArea.border-hidden {
         border: 2px solid transparent; 
     }
@@ -240,15 +240,19 @@
         
         <div class="controls-container">
             
-            <button id="convertBtn"><i class="fas fa-video"></i> Buat Video</button>
+            <button id="convertBtn">🎬 Buat Video</button>
             
             <div class="controls-group">
                 <div>
                     <label for="resolution">Rasio Aspek</label>
                     <select id="resolution">
-                        <option value="1080x1080">1:1 (Square)</option>
-                        <option value="1080x1920">9:16 (Reels/TikTok)</option>
-                        <option value="1920x1080">16:9 (YouTube)</option>
+                        
+                        <option value="1200x630">Facebook (1.91:1 - Link)</option>
+                        <option value="1080x1350">Instagram (4:5 - Feed)</option>
+                        <option value="1080x1920">9:16 (Reels/TikTok/Status WhatsApp)</option>
+                        
+                        <option value="1080x1080">1:1 (Square - Universal)</option>
+                        <option value="1920x1080">16:9 (YouTube/Landscape)</option>
                     </select>
                 </div>
                 
