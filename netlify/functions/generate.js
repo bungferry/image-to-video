@@ -15,7 +15,7 @@ if (process.env.LAMBDA_TASK_ROOT) {
         ffmpegPath = binPath;
     }
 }
-// Kode chmod (fs.chmodSync) sudah dihapus untuk mengatasi error EROFS
+// Kode chmod (fs.chmodSync) sudah dihapus karena error EROFS
 
 ffmpeg.setFfmpegPath(ffmpegPath);
 // -----------------------------------------------------------
@@ -54,7 +54,7 @@ export const handler = async (event) => {
           "-preset veryfast",
           "-pix_fmt yuv420p",
           
-          // PERBAIKAN SINTAKS FILTER (-vf) FINAL: 
+          // PERBAIKAN SINTAKS FILTER (-vf)
           // 1. Scale gambar agar pas di 1920x1080 (menjaga rasio aspek).
           // 2. Pad (isi) sisanya dengan warna hitam.
           "-vf scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:color=black"
