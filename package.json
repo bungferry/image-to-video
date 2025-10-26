@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "ffmpeg-static": "^4.4.0",
-    "formidable": "^2.1.1"
+    "busboy": "^1.6.0",
+    "ffmpeg-static": "^4.4.0"
   }
 }
