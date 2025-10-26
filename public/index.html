@@ -17,7 +17,7 @@
         flex-direction:column; 
         align-items:center; 
         justify-content:center; 
-        min-height:100vh; 
+        min-height:100%; 
         margin:0; 
         padding: 20px;
     }
@@ -118,8 +118,8 @@
     /* KONTROL TOMBOL UNDUH DAN BAGIKAN (CONTAINER) */
     .action-buttons {
         position: absolute; 
-        bottom: 15px; /* Posisi di bawah */
-        right: 15px;  /* Posisi di kanan */
+        top: 15px;      /* Pindah ke atas */
+        right: 15px;    /* Tetap di kanan */
         display: flex;
         gap: 8px;
         z-index: 10; 
@@ -131,11 +131,11 @@
         border: none; 
         color: #121212; 
         padding: 0; 
-        width: 30px; /* Ukuran Baru */
-        height: 30px; /* Ukuran Baru */
+        width: 30px; 
+        height: 30px; 
         border-radius: 50%; 
         cursor: pointer; 
-        font-size: 1em; /* Ukuran ikon disesuaikan */
+        font-size: 1em; 
         display: flex;
         align-items: center;
         justify-content: center;
@@ -297,7 +297,7 @@
     const previewImage = document.getElementById("previewImage");
     const videoPreview = document.getElementById("videoPreview");
     
-    // Tombol Aksi Baru
+    // Tombol Aksi 
     const actionButtonsContainer = document.getElementById("actionButtons"); // Kontainer
     const downloadButton = document.getElementById("downloadButton"); 
     const shareButton = document.getElementById("shareButton"); 
@@ -441,6 +441,7 @@
         const selectedDuration = durationInput.value; 
 
         try {
+          // Asumsi /functions/generate sudah fix dan menggunakan fluent-ffmpeg
           const res = await fetch("/.netlify/functions/generate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
