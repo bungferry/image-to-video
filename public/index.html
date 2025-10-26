@@ -5,79 +5,269 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Konversi Gambar ke Video (.mp4)</title>
   <style>
-    body { font-family: system-ui, sans-serif; background:#121212; color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; margin:0; }
-    .card { background:#1e1e1e; padding:20px; border-radius:12px; width:90%; max-width:400px; text-align:center; }
-    input[type="file"], select { display:block; margin:10px auto; width:100%; padding: 8px; border-radius: 4px; border: 1px solid #333; background: #333; color: white; box-sizing: border-box; }
-    input[type="range"] { width:100%; }
-    button { background:#0078ff; border:none; color:white; padding:10px 20px; border-radius:8px; cursor:pointer; margin-top:10px; width:100%; }
+    /* 1. Layout Responsif */
+    body { 
+        font-family: system-ui, sans-serif; 
+        background:#121212; 
+        color:#fff; 
+        display:flex; 
+        flex-direction:column; 
+        align-items:center; 
+        justify-content:center; 
+        min-height:100vh; 
+        margin:0; 
+        padding: 20px;
+    }
+    .container { 
+        width: 100%; 
+        max-width: 900px; 
+        display: flex; 
+        flex-wrap: wrap; 
+        gap: 20px; 
+    }
+    .card { 
+        background:#1e1e1e; 
+        padding:20px; 
+        border-radius:12px; 
+        flex: 1 1 300px; /* Fleksibel untuk layar kecil */
+        min-width: 300px;
+    }
+    h2 { margin-top: 0; text-align: center; }
+
+    /* 2. Drop Area/Preview Container (Rasio 1:1) */
+    #dropArea {
+        border: 2px dashed #0078ff;
+        border-radius: 8px;
+        color: #aaa;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 10px;
+        margin-bottom: 20px;
+        position: relative;
+        overflow: hidden;
+        /* Membuat rasio aspek 1:1 */
+        width: 100%;
+        padding-top: 100%; 
+    }
+    #dropArea:not(.disabled):hover {
+        background: #2a2a2a;
+    }
+    #dropArea.disabled {
+        cursor: default;
+    }
+    .drop-content {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+        box-sizing: border-box;
+        transition: opacity 0.3s;
+    }
+
+    /* Input File tersembunyi */
+    #image { display: none; } 
+
+    /* Preview Gambar/Video */
+    #previewImage, #videoPreview {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain; /* Agar gambar tidak terpotong */
+        border-radius: 8px;
+        display: none;
+    }
+    #videoPreview {
+        object-fit: cover; /* Video cover agar 1:1 penuh */
+    }
+
+    /* 4. Kontrol (Input dan Tombol) */
+    .controls { 
+        display: flex; 
+        flex-direction: column; 
+        gap: 15px; 
+    }
+    label { display: block; margin-top: 5px; text-align: left; }
+    select, input[type="range"] { 
+        width:100%; 
+        padding: 8px; 
+        border-radius: 4px; 
+        border: 1px solid #333; 
+        background: #333; 
+        color: white; 
+        box-sizing: border-box; 
+    }
+    #convertBtn, #downloadButton { 
+        border:none; 
+        color:white; 
+        padding:12px; 
+        border-radius:8px; 
+        cursor:pointer; 
+        width:100%; 
+        font-weight: bold;
+    }
+    #convertBtn { background:#0078ff; margin-top: 15px; }
+    #downloadButton { background: #00cc66; }
     button:disabled { background:#555; cursor:not-allowed; }
     .progress { margin-top:15px; font-size:0.9em; opacity:0.8; }
-    label { display: block; margin-top: 10px; text-align: left; }
-    /* Styling untuk Video Preview */
-    #videoPreviewContainer { margin-top: 20px; text-align: center; }
-    #videoPreview { max-width: 100%; height: auto; border-radius: 8px; border: 2px solid #0078ff; display: none; /* Awalnya tersembunyi */ }
-    #downloadContainer { margin-top: 15px; display: none; /* Awalnya tersembunyi */ }
-    #downloadButton { background: #00cc66; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>🎞️ Konversi Gambar ke Video</h2>
-    <input type="file" id="image" accept="image/*" />
+  <div class="container">
     
-    <label for="resolution">Pilih Rasio Aspek:</label>
-    <select id="resolution">
-      <option value="1920x1080">16:9 (1920x1080 - YouTube)</option>
-      <option value="1080x1080">1:1 (1080x1080 - Instagram Square)</option>
-      <option value="1080x1920">9:16 (1080x1920 - Reels/TikTok)</option>
-    </select>
-    
-    <label>Durasi video (detik): <span id="durValue">5</span></label>
-    <input type="range" id="duration" min="1" max="60" value="5" />
-    
-    <button id="convertBtn">Convert ke Video</button>
-    <div class="progress" id="status"></div>
+    <div class="card" style="flex: 2 1 400px;">
+        <h2>Media Upload & Preview</h2>
+        <input type="file" id="image" accept="image/*" />
+        
+        <div id="dropArea">
+            
+            <div class="drop-content" id="initialContent">
+                <span>Klik atau Drop Gambar di Sini</span>
+                <small>Rasio aspek visual 1:1</small>
+            </div>
+            
+            <img id="previewImage" src="" alt="Preview Gambar" />
+            <video id="videoPreview" controls muted></video>
+            
+            <div id="downloadContainer" style="display: none;">
+                <button id="downloadButton">⬇️ Unduh Video</button>
+            </div>
+        </div>
 
-    <div id="videoPreviewContainer">
-      <video id="videoPreview" controls></video>
-      
-      <div id="downloadContainer">
-        <button id="downloadButton">Unduh Video</button>
-      </div>
+        <div class="progress" id="status">Pilih gambar dan atur opsi konversi.</div>
     </div>
-  </div>
 
-  <script>
+    <div class="card">
+        <h2>Kontrol Video</h2>
+        <div class="controls">
+            
+            <div>
+                <label for="resolution">Rasio Aspek Output:</label>
+                <select id="resolution">
+                    <option value="1080x1080">1:1 (1080x1080 - Square)</option>
+                    <option value="1080x1920">9:16 (1080x1920 - Reels/TikTok)</option>
+                    <option value="1920x1080">16:9 (1920x1080 - YouTube)</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Durasi (detik): <span id="durValue">5</span></label>
+                <input type="range" id="duration" min="1" max="60" value="5" />
+            </div>
+
+            <button id="convertBtn">🎬 Buat Video</button>
+        </div>
+    </div>
+
+  </div> <script>
+    // --- Elemen DOM ---
     const convertBtn = document.getElementById("convertBtn");
     const imageInput = document.getElementById("image");
     const durationInput = document.getElementById("duration");
     const resolutionInput = document.getElementById("resolution");
     const durValue = document.getElementById("durValue");
     const statusEl = document.getElementById("status");
+    const dropArea = document.getElementById("dropArea");
+    const initialContent = document.getElementById("initialContent");
+    const previewImage = document.getElementById("previewImage");
     const videoPreview = document.getElementById("videoPreview");
     const downloadContainer = document.getElementById("downloadContainer");
     const downloadButton = document.getElementById("downloadButton");
 
-    durationInput.oninput = () => (durValue.textContent = durationInput.value);
-
-    // Variabel untuk menyimpan URL Blob agar bisa dibersihkan nanti
+    // --- State & Utility ---
+    let selectedFile = null;
     let videoUrl = null;
 
-    // Fungsi untuk membersihkan URL Blob sebelumnya
+    // Bersihkan dan reset preview
     const cleanup = () => {
       if (videoUrl) {
         URL.revokeObjectURL(videoUrl);
         videoUrl = null;
       }
+      previewImage.style.display = 'none';
       videoPreview.style.display = 'none';
+      videoPreview.pause();
+      videoPreview.removeAttribute('src');
+      videoPreview.load();
       downloadContainer.style.display = 'none';
+      
+      // Pastikan drop area diaktifkan kembali jika tidak ada file yang dipilih
+      if (!selectedFile) {
+        dropArea.classList.remove('disabled');
+        initialContent.style.display = 'flex';
+      }
     };
 
-    convertBtn.onclick = async () => {
-      cleanup(); // Bersihkan preview sebelumnya
-      const file = imageInput.files[0];
-      if (!file) { alert("Pilih gambar dulu!"); return; }
+    const handleFile = (file) => {
+        if (!file || !file.type.startsWith('image/')) {
+            alert("Hanya file gambar yang didukung.");
+            return;
+        }
+        
+        cleanup(); // Bersihkan preview video
+        selectedFile = file;
+        
+        // Tampilkan preview gambar
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewImage.src = e.target.result;
+            previewImage.style.display = 'block';
+            initialContent.style.display = 'none'; // Sembunyikan prompt drop
+        };
+        reader.readAsDataURL(file);
+    };
 
+    // --- Event Listeners Drop Area ---
+    dropArea.addEventListener('click', () => {
+        if (!dropArea.classList.contains('disabled')) {
+            imageInput.click();
+        }
+    });
+
+    imageInput.addEventListener('change', (e) => {
+        if (e.target.files.length) {
+            handleFile(e.target.files[0]);
+        }
+    });
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      dropArea.addEventListener(eventName, preventDefaults, false);
+      if (!dropArea.classList.contains('disabled')) {
+        document.body.addEventListener(eventName, preventDefaults, false);
+      }
+    });
+
+    function preventDefaults (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    dropArea.addEventListener('drop', (e) => {
+        if (dropArea.classList.contains('disabled')) return;
+        let dt = e.dataTransfer;
+        let files = dt.files;
+        if (files.length) {
+            handleFile(files[0]);
+        }
+    }, false);
+
+    // --- Event Listeners Konversi ---
+    durationInput.oninput = () => (durValue.textContent = durationInput.value);
+
+    convertBtn.onclick = async () => {
+      if (!selectedFile) { alert("Pilih atau drop gambar dulu!"); return; }
+
+      cleanup(); 
       convertBtn.disabled = true;
       statusEl.textContent = "⏳ Sedang diproses...";
 
@@ -97,39 +287,43 @@
             })
           });
 
-          if (!res.ok) throw new Error("Gagal mengonversi video");
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || "Gagal mengonversi video");
+          }
 
-          // 1. Terima Blob
           const blob = await res.blob();
-          
-          // 2. Buat URL Blob baru
           videoUrl = URL.createObjectURL(blob);
           
-          // 3. Tampilkan Video Preview
+          // Tampilkan Video Preview
           videoPreview.src = videoUrl;
           videoPreview.style.display = 'block';
-          
-          // 4. Tampilkan Tombol Unduh
+          previewImage.style.display = 'none'; // Sembunyikan preview gambar
           downloadContainer.style.display = 'block';
+          dropArea.classList.add('disabled'); // 3. Nonaktifkan drop area saat preview aktif
+
           statusEl.textContent = "✅ Selesai! Video siap di-preview dan diunduh.";
 
-          // Atur fungsi unduh ketika tombol diklik
+          // Atur fungsi unduh
           downloadButton.onclick = () => {
             const a = document.createElement("a");
             a.href = videoUrl;
             a.download = "hasil-video.mp4";
             a.click();
-            // Tidak perlu revokeObjectURL di sini karena kita ingin preview tetap ada
           };
 
         } catch (err) {
           statusEl.textContent = "❌ Terjadi kesalahan: " + err.message;
+          dropArea.classList.remove('disabled'); // Aktifkan kembali jika error
+          if (previewImage.src) { // Jika ada gambar, tampilkan lagi
+              previewImage.style.display = 'block';
+          }
         } finally {
           convertBtn.disabled = false;
         }
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(selectedFile);
     };
   </script>
 </body>
-                                                 </html>
+  </html>
