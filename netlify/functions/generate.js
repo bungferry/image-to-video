@@ -1,45 +1,30 @@
-import { IncomingForm } from "formidable";
 import fs from "fs";
 import path from "path";
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegPath from "ffmpeg-static";
-import { PassThrough } from "stream";
 
 export const handler = async (event) => {
   try {
     ffmpeg.setFfmpegPath(ffmpegPath);
 
+    if (!event.body) throw new Error("Tidak ada body di request.");
+
+    const { imageBase64, duration } = JSON.parse(event.body);
+    if (!imageBase64) throw new Error("Tidak ada file gambar.");
+
     const tmpDir = "/tmp";
     const inputPath = path.join(tmpDir, `input-${Date.now()}.jpg`);
     const outputPath = path.join(tmpDir, `output-${Date.now()}.mp4`);
 
-    if (!event.body) throw new Error("Tidak ada body di request.");
+    // Simpan file gambar sementara
+    fs.writeFileSync(inputPath, Buffer.from(imageBase64, "base64"));
 
-    // Decode Base64 body
-    const buffer = Buffer.from(event.body, event.isBase64Encoded ? "base64" : "utf8");
+    const dur = duration ? Number(duration) : 5;
 
-    // Simulasikan stream untuk formidable
-    const stream = new PassThrough();
-    stream.end(buffer);
-
-    const form = new IncomingForm({ multiples: false, keepExtensions: true });
-
-    const { fields, files } = await new Promise((resolve, reject) => {
-      form.parse(stream, (err, fields, files) => {
-        if (err) reject(err);
-        else resolve({ fields, files });
-      });
-    });
-
-    if (!files.image) throw new Error("Tidak ada file gambar.");
-
-    fs.copyFileSync(files.image.filepath, inputPath);
-
-    const duration = fields.duration ? Number(fields.duration) : 5;
-
+    // Proses ffmpeg
     await new Promise((resolve, reject) => {
       ffmpeg(inputPath)
-        .loop(duration)
+        .loop(dur)
         .videoCodec("libx264")
         .size("1920x1080")
         .outputOptions(["-pix_fmt yuv420p"])
@@ -51,15 +36,15 @@ export const handler = async (event) => {
     const videoBuffer = fs.readFileSync(outputPath);
 
     // Hapus file sementara
-    try { fs.unlinkSync(inputPath); fs.unlinkSync(outputPath); } catch {}
+    fs.unlinkSync(inputPath);
+    fs.unlinkSync(outputPath);
 
     return {
       statusCode: 200,
       headers: { "Content-Type": "video/mp4" },
       body: videoBuffer.toString("base64"),
-      isBase64Encoded: true
+      isBase64Encoded: true,
     };
-
   } catch (err) {
     return {
       statusCode: 500,
