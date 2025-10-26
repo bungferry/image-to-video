@@ -22,8 +22,8 @@
         padding: 20px;
     }
     .container { 
-        width: 100%; 
-        max-width: 900px; 
+       /* width: 100%; */
+        width: 600px; 
         display: flex; 
         flex-wrap: wrap; 
         gap: 20px; 
@@ -218,6 +218,13 @@
             width: 100%;
         }
     }
+
+      @media (max-width: 700px) {
+        .container {
+            margin: 0 auto;
+            width: auto;
+        }
+  }
   </style>
 </head>
 <body>
