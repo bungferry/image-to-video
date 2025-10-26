@@ -6,17 +6,16 @@ import ffmpegStatic from "ffmpeg-static";
 // --- Logika Penyesuaian Jalur FFmpeg untuk Netlify Lambda ---
 let ffmpegPath = ffmpegStatic;
 
+// Cari biner di tempat yang diharapkan oleh Lambda setelah bundling
 if (process.env.LAMBDA_TASK_ROOT) {
-    // Cari biner di tempat yang diharapkan oleh Lambda setelah bundling
     const functionRoot = process.env.LAMBDA_TASK_ROOT;
     const binPath = path.join(functionRoot, 'node_modules', 'ffmpeg-static', 'ffmpeg');
     
-    // Periksa dan gunakan jalur yang sudah di-deploy
     if (fs.existsSync(binPath)) {
         ffmpegPath = binPath;
     }
 }
-// Hapus kode fs.chmodSync karena EROFS (Read-Only)
+// Kode chmod (fs.chmodSync) sudah dihapus untuk mengatasi error EROFS
 
 ffmpeg.setFfmpegPath(ffmpegPath);
 // -----------------------------------------------------------
@@ -36,7 +35,6 @@ export const handler = async (event) => {
     inputPath = path.join(tmpDir, `input-${uniqueId}.jpg`);
     outputPath = path.join(tmpDir, `output-${uniqueId}.mp4`);
 
-    // Simpan file gambar sementara
     fs.writeFileSync(inputPath, Buffer.from(imageBase64, "base64"));
     console.log(`Input file saved to: ${inputPath}`);
 
@@ -51,12 +49,15 @@ export const handler = async (event) => {
           "-framerate 25",
         ])
         .videoCodec("libx264")
-        .size("1920x1080")
+        // Hapus .size() karena kita menggunakan filter (-vf)
         .outputOptions([
           "-preset veryfast",
           "-pix_fmt yuv420p",
-          // PERBAIKAN SINTAKS VF: Hapus tanda kutip tunggal ('') yang tidak perlu
-          "-vf scale=min(1920,iw):min(1080,ih):force_original_aspect_ratio=decrease,pad=1920:1080:-1:-1:color=black"
+          
+          // PERBAIKAN SINTAKS FILTER (-vf) FINAL: 
+          // 1. Scale gambar agar pas di 1920x1080 (menjaga rasio aspek).
+          // 2. Pad (isi) sisanya dengan warna hitam.
+          "-vf scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:color=black"
         ])
         .save(outputPath)
         .on("end", () => {
@@ -87,6 +88,7 @@ export const handler = async (event) => {
       body: JSON.stringify({ error: err.message || "Kesalahan Server Internal." }),
     };
   } finally {
+    // Pastikan file sementara dihapus
     if (inputPath && fs.existsSync(inputPath)) {
       fs.unlinkSync(inputPath);
     }
