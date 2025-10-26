@@ -1,0 +1,9 @@
+{
+  "name": "image-to-video",
+  "version": "1.0.0",
+  "main": "api/generate.js",
+  "dependencies": {
+    "ffmpeg-static": "^4.4.0",
+    "formidable": "^2.1.1"
+  }
+}
