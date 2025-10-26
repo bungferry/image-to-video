@@ -6,7 +6,6 @@ import ffmpegStatic from "ffmpeg-static";
 // --- Logika Penyesuaian Jalur FFmpeg untuk Netlify Lambda ---
 let ffmpegPath = ffmpegStatic;
 
-// Cari biner di tempat yang diharapkan oleh Lambda setelah bundling
 if (process.env.LAMBDA_TASK_ROOT) {
     const functionRoot = process.env.LAMBDA_TASK_ROOT;
     const binPath = path.join(functionRoot, 'node_modules', 'ffmpeg-static', 'ffmpeg');
@@ -15,8 +14,6 @@ if (process.env.LAMBDA_TASK_ROOT) {
         ffmpegPath = binPath;
     }
 }
-// Kode chmod (fs.chmodSync) sudah dihapus karena error EROFS
-
 ffmpeg.setFfmpegPath(ffmpegPath);
 // -----------------------------------------------------------
 
@@ -27,8 +24,17 @@ export const handler = async (event) => {
   try {
     if (!event.body) throw new Error("Tidak ada body di request.");
 
-    const { imageBase64, duration } = JSON.parse(event.body);
+    const { imageBase64, duration, resolution } = JSON.parse(event.body);
     if (!imageBase64) throw new Error("Tidak ada file gambar.");
+    
+    // --- Proses Resolusi ---
+    const targetResolution = resolution || "1920x1080";
+    const [W, H] = targetResolution.split('x').map(Number); // W = lebar, H = tinggi
+    if (isNaN(W) || isNaN(H)) {
+        throw new Error("Format resolusi tidak valid.");
+    }
+    console.log(`Target Resolution: ${W}x${H}`);
+    // -----------------------
 
     const tmpDir = "/tmp";
     const uniqueId = Date.now();
@@ -49,15 +55,14 @@ export const handler = async (event) => {
           "-framerate 25",
         ])
         .videoCodec("libx264")
-        // Hapus .size() karena kita menggunakan filter (-vf)
         .outputOptions([
           "-preset veryfast",
           "-pix_fmt yuv420p",
           
-          // PERBAIKAN SINTAKS FILTER (-vf)
-          // 1. Scale gambar agar pas di 1920x1080 (menjaga rasio aspek).
+          // GUNAKAN VARIABEL W DAN H UNTUK FILTER
+          // 1. Scale gambar agar pas di resolusi target (W x H).
           // 2. Pad (isi) sisanya dengan warna hitam.
-          "-vf scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:color=black"
+          `-vf scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=black`
         ])
         .save(outputPath)
         .on("end", () => {
@@ -88,7 +93,6 @@ export const handler = async (event) => {
       body: JSON.stringify({ error: err.message || "Kesalahan Server Internal." }),
     };
   } finally {
-    // Pastikan file sementara dihapus
     if (inputPath && fs.existsSync(inputPath)) {
       fs.unlinkSync(inputPath);
     }
