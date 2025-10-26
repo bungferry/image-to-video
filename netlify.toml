@@ -6,6 +6,5 @@
   node_bundler = "esbuild"
   included_files = [
     "node_modules/ffmpeg-static/**/*",
-    "node_modules/formidable/**/*",
     "node_modules/fluent-ffmpeg/**/*"
   ]
