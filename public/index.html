@@ -8,11 +8,11 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   
   <style>
-    /* PERUBAHAN TEMA TERANG */
+    /* 1. Layout Responsif & Tema Terang */
     body { 
         font-family: system-ui, sans-serif; 
-        background: #f0f0f0; /* Latar Belakang Sangat Terang */
-        color: #333; /* Teks Hitam */
+        background: #f0f0f0; 
+        color: #333; 
         display:flex; 
         flex-direction:column; 
         align-items:center; 
@@ -29,10 +29,10 @@
         gap: 20px; 
     }
     .card { 
-        background: #ffffff; /* Card Putih */
+        background: #ffffff; 
         padding:20px; 
         border-radius:12px; 
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Tambah bayangan agar menonjol */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         flex: 1 1 300px; 
         min-width: 300px;
         min-height: 200px; 
@@ -44,7 +44,7 @@
     #dropArea {
         border: 2px dashed #0078ff;
         border-radius: 8px;
-        color: #666; /* Teks abu-abu */
+        color: #666; 
         cursor: pointer;
         display: block; 
         text-align: center;
@@ -55,7 +55,7 @@
         padding-top: 100%; 
     }
     #dropArea:not(.disabled):hover {
-        background: #e9e9e9; /* Hover sangat terang */
+        background: #e9e9e9; 
     }
     #dropArea.disabled {
         cursor: default;
@@ -74,11 +74,7 @@
         box-sizing: border-box;
         transition: opacity 0.3s;
     }
-
-    /* Input File tersembunyi */
     #image { display: none; } 
-
-    /* Preview Gambar/Video */
     #previewImage, #videoPreview {
         position: absolute;
         top: 0;
@@ -87,12 +83,10 @@
         height: 100%;
         border-radius: 8px;
         display: none;
+        object-fit: cover; /* Gunakan cover untuk video dan contain untuk gambar */
     }
     #previewImage {
         object-fit: contain;
-    }
-    #videoPreview {
-        object-fit: cover;
     }
 
     /* KONTROL STATUS PROSES DI TENGAH PREVIEW */
@@ -102,8 +96,8 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(255, 255, 255, 0.9); /* Background PUTIH semi-transparan */
-        color: #111; /* Teks Hitam */
+        background: rgba(255, 255, 255, 0.9);
+        color: #111; 
         display: none; 
         flex-direction: column;
         align-items: center;
@@ -114,11 +108,11 @@
         font-weight: bold;
     }
 
-    /* KONTROL TOMBOL UNDUH IKON (Tetap putih transparan) */
+    /* KONTROL TOMBOL UNDUH IKON */
     #downloadButton { 
         background: rgba(255, 255, 255, 0.7);
         border: none; 
-        color: #121212; /* Ikon Hitam */
+        color: #121212; 
         padding: 0; 
         width: 40px; 
         height: 40px;
@@ -140,44 +134,83 @@
     }
     #downloadButton:disabled { background:#ccc; cursor:not-allowed; color: #666; }
 
-    /* Gaya untuk tombol konversi dan input lainnya */
-    .controls { 
-        display: flex; 
-        flex-direction: column; 
-        gap: 15px; 
+    /* LAYOUT KONTROL BARU */
+    .controls-container {
+        display: flex;
+        align-items: center;
+        gap: 10px; /* Jarak antar elemen kontrol */
+        margin-top: 10px;
     }
-    label { display: block; margin-top: 5px; text-align: left; color: #333; }
-    select, input[type="range"] { 
-        width:100%; 
-        padding: 8px; 
-        border-radius: 4px; 
-        border: 1px solid #ccc; /* Border terang */
-        background: #f9f9f9; /* Input background sangat terang */
-        color: #333; /* Teks input gelap */
-        box-sizing: border-box; 
+    .controls-group {
+        display: flex;
+        gap: 10px;
     }
+    .controls-group > div {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Tombol Buat Video akan fleksibel mengisi ruang */
     #convertBtn { 
         background:#0078ff; 
         border:none; 
         color:white; 
-        padding:12px; 
+        padding:10px 15px; 
         border-radius:8px; 
         cursor:pointer; 
-        width:100%; 
         font-weight: bold;
-        margin-top: 15px;
+        flex-grow: 1; /* PENTING: Membuat tombol mengisi ruang kosong */
+        min-width: 120px;
+        height: 40px; /* Sesuaikan tinggi dengan dropdown */
+        align-self: flex-end; /* Memastikan tombol rata bawah jika item lain lebih tinggi */
     }
     #convertBtn:disabled { background:#aaa; cursor:not-allowed; }
     
-    /* Status bawah tetap di posisinya */
+    /* Gaya untuk dropdown */
+    select { 
+        padding: 8px; 
+        border-radius: 4px; 
+        border: 1px solid #ccc; 
+        background: #f9f9f9; 
+        color: #333; 
+        box-sizing: border-box; 
+        height: 40px; /* Tinggi agar sejajar dengan tombol */
+    }
+    label { 
+        font-size: 0.8em; 
+        color: #666; 
+        margin-bottom: 2px;
+        text-align: left;
+    }
+    
+    /* Status bawah */
     .progress { margin-top:15px; font-size:0.9em; opacity:0.7; color: #333; }
+    
+    /* Adaptasi responsif */
+    @media (max-width: 600px) {
+        .controls-container {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .controls-group {
+            width: 100%;
+            justify-content: space-between;
+        }
+        .controls-group > div {
+            flex: 1;
+        }
+        #convertBtn {
+            margin-top: 10px;
+            width: 100%;
+        }
+    }
   </style>
 </head>
 <body>
   <div class="container">
     
     <div class="card" style="flex: 2 1 400px;">
-        <h2>Media Upload & Preview</h2>
+        <h2>Konversi Gambar ke Video</h2>
         <input type="file" id="image" accept="image/*" />
         
         <div id="dropArea">
@@ -197,47 +230,52 @@
 
             <button id="downloadButton" style="display: none;"><i class="fas fa-download"></i></button>
         </div>
-
+        
+        <div class="controls-container">
+            
+            <button id="convertBtn">🎬 Buat Video</button>
+            
+            <div class="controls-group">
+                <div>
+                    <label for="resolution">Rasio Aspek</label>
+                    <select id="resolution">
+                        <option value="1080x1080">1:1 (Square)</option>
+                        <option value="1080x1920">9:16 (Reels/TikTok)</option>
+                        <option value="1920x1080">16:9 (YouTube)</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="duration">Durasi (detik)</label>
+                    <select id="duration">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                        <option value="30">30</option>
+                        <option value="60">60</option>
+                    </select>
+                </div>
+            </div>
+        </div>
         <div class="progress" id="status">Pilih gambar dan atur opsi konversi.</div>
     </div>
-
-    <div class="card">
-        <h2>Kontrol Video</h2>
-        <div class="controls">
-            
-            <div>
-                <label for="resolution">Rasio Aspek Output:</label>
-                <select id="resolution">
-                    <option value="1080x1080">1:1 (1080x1080 - Square)</option>
-                    <option value="1080x1920">9:16 (1080x1920 - Reels/TikTok)</option>
-                    <option value="1920x1080">16:9 (1920x1080 - YouTube)</option>
-                </select>
-            </div>
-
-            <div>
-                <label>Durasi (detik): <span id="durValue">5</span></label>
-                <input type="range" id="duration" min="1" max="60" value="5" />
-            </div>
-
-            <button id="convertBtn">🎬 Buat Video</button>
-        </div>
-    </div>
+    
+    <div class="card" style="display:none;"></div> 
 
   </div> <script>
     // --- Elemen DOM ---
     const convertBtn = document.getElementById("convertBtn");
     const imageInput = document.getElementById("image");
-    const durationInput = document.getElementById("duration");
+    const durationInput = document.getElementById("duration"); // Sekarang dropdown
     const resolutionInput = document.getElementById("resolution");
-    const durValue = document.getElementById("durValue");
-    const statusEl = document.getElementById("status"); // Status bawah (Sukses/Error)
+    // const durValue = document.getElementById("durValue"); // Dihapus karena slider diganti dropdown
+    const statusEl = document.getElementById("status");
     const dropArea = document.getElementById("dropArea");
     const initialContent = document.getElementById("initialContent");
     const previewImage = document.getElementById("previewImage");
     const videoPreview = document.getElementById("videoPreview");
     const downloadButton = document.getElementById("downloadButton"); 
-    
-    // Elemen Overlay Baru
     const processingOverlay = document.getElementById("processingOverlay"); 
 
     // --- State & Utility ---
@@ -257,12 +295,12 @@
       videoPreview.load();
       videoPreview.removeAttribute('poster'); 
       downloadButton.style.display = 'none'; 
-      processingOverlay.style.display = 'none'; // Sembunyikan overlay proses
+      processingOverlay.style.display = 'none'; 
       
       if (!selectedFile) {
         dropArea.classList.remove('disabled');
         initialContent.style.display = 'flex';
-        statusEl.textContent = "Pilih gambar dan atur opsi konversi."; // Reset status bawah
+        statusEl.textContent = "Pilih gambar dan atur opsi konversi."; 
       }
     };
 
@@ -284,7 +322,7 @@
         reader.readAsDataURL(file);
     };
 
-    // --- Event Listeners Drop Area ---
+    // --- Event Listeners Drop Area & Input ---
     dropArea.addEventListener('click', () => {
         if (!dropArea.classList.contains('disabled')) {
             imageInput.click();
@@ -319,7 +357,8 @@
     }, false);
 
     // --- Event Listeners Konversi ---
-    durationInput.oninput = () => (durValue.textContent = durationInput.value);
+    // durValue.textContent tidak diperlukan lagi karena menggunakan dropdown
+    // durationInput.oninput = () => (durValue.textContent = durationInput.value); 
 
     convertBtn.onclick = async () => {
       if (!selectedFile) { alert("Pilih atau drop gambar dulu!"); return; }
@@ -336,12 +375,13 @@
       
       // Tampilkan Overlay Proses di tengah Preview
       processingOverlay.style.display = 'flex'; 
-      statusEl.textContent = ""; // Kosongkan status di bawah card
+      statusEl.textContent = ""; 
 
       const reader = new FileReader();
       reader.onload = async () => {
         const base64 = reader.result.split(",")[1];
         const selectedResolution = resolutionInput.value; 
+        const selectedDuration = durationInput.value; // Ambil nilai dari dropdown Durasi
 
         try {
           const res = await fetch("/.netlify/functions/generate", {
@@ -349,7 +389,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
               imageBase64: base64, 
-              duration: durationInput.value,
+              duration: selectedDuration,
               resolution: selectedResolution
             })
           });
@@ -362,7 +402,6 @@
           const blob = await res.blob();
           videoUrl = URL.createObjectURL(blob);
           
-          // Sembunyikan Overlay Proses sebelum menampilkan video
           processingOverlay.style.display = 'none';
           
           videoPreview.poster = posterBase64; 
@@ -380,7 +419,7 @@
           downloadButton.onclick = () => {
             const a = document.createElement("a");
             a.href = videoUrl;
-            a.download = `video-${selectedResolution}-${durationInput.value}s.mp4`; 
+            a.download = `video-${selectedResolution}-${selectedDuration}s.mp4`; 
             a.click();
           };
 
