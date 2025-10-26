@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Konversi Gambar ke Video (.mp4)</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
-    /* 1. Layout Responsif */
     body { 
         font-family: system-ui, sans-serif; 
         background:#121212; 
@@ -31,28 +31,23 @@
         border-radius:12px; 
         flex: 1 1 300px; 
         min-width: 300px;
-        /* Tambahkan min-height dan overflow:visible agar konten panjang dapat diakomodasi */
         min-height: 200px; 
         box-sizing: border-box;
     }
     h2 { margin-top: 0; text-align: center; }
 
-    /* 2. Drop Area/Preview Container (Rasio 1:1) */
     #dropArea {
         border: 2px dashed #0078ff;
         border-radius: 8px;
         color: #aaa;
         cursor: pointer;
-        /* Hapus display:flex, atur display:block */
         display: block; 
         text-align: center;
         margin-bottom: 20px;
         position: relative;
         overflow: hidden;
-        /* MENGAMANKAN RASIO ASPEK 1:1 */
         width: 100%;
         padding-top: 100%; 
-        /* Pastikan konten yang menggunakan position:absolute terikat ke elemen ini */
     }
     #dropArea:not(.disabled):hover {
         background: #2a2a2a;
@@ -66,7 +61,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        display: flex; /* Kembalikan flex di sini */
+        display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
@@ -75,10 +70,8 @@
         transition: opacity 0.3s;
     }
 
-    /* Input File tersembunyi */
     #image { display: none; } 
 
-    /* Preview Gambar/Video */
     #previewImage, #videoPreview {
         position: absolute;
         top: 0;
@@ -95,7 +88,35 @@
         object-fit: cover;
     }
 
-    /* 4. Kontrol (Input dan Tombol) */
+    /* KONTROL BARU UNTUK TOMBOL UNDUH */
+    #downloadButton { 
+        background: rgba(255, 255, 255, 0.7); /* Putih transparan */
+        border: none; 
+        color: #121212; /* Warna teks ikon hitam */
+        padding: 0; /* Hapus padding default */
+        width: 40px; 
+        height: 40px;
+        border-radius: 50%; /* Bentuk bulat */
+        cursor: pointer; 
+        font-size: 1.2em; /* Ukuran ikon */
+        display: flex; /* Untuk menengahkan ikon */
+        align-items: center;
+        justify-content: center;
+        
+        /* POSISI: pojok kanan atas */
+        position: absolute; 
+        top: 15px; 
+        right: 15px;
+        z-index: 10; /* Pastikan di atas video */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        transition: background 0.3s ease;
+    }
+    #downloadButton:hover {
+        background: rgba(255, 255, 255, 0.9);
+    }
+    #downloadButton:disabled { background:#555; cursor:not-allowed; color: #ccc; }
+
+    /* Gaya untuk tombol konversi dan input lainnya */
     .controls { 
         display: flex; 
         flex-direction: column; 
@@ -111,7 +132,8 @@
         color: white; 
         box-sizing: border-box; 
     }
-    #convertBtn, #downloadButton { 
+    #convertBtn { 
+        background:#0078ff; 
         border:none; 
         color:white; 
         padding:12px; 
@@ -119,20 +141,9 @@
         cursor:pointer; 
         width:100%; 
         font-weight: bold;
+        margin-top: 15px;
     }
-    #convertBtn { background:#0078ff; margin-top: 15px; }
-    #downloadButton { 
-        background: #00cc66; 
-        /* Tombol unduh harus ada di atas video preview, 
-           dan kita atur posisinya relatif terhadap dropArea */
-        position: absolute; 
-        bottom: 15px; 
-        left: 50%;
-        transform: translateX(-50%);
-        width: 80%;
-        z-index: 10;
-    }
-    button:disabled { background:#555; cursor:not-allowed; }
+    #convertBtn:disabled { background:#555; cursor:not-allowed; }
     .progress { margin-top:15px; font-size:0.9em; opacity:0.8; }
   </style>
 </head>
@@ -153,7 +164,7 @@
             <img id="previewImage" src="" alt="Preview Gambar" />
             <video id="videoPreview" controls muted></video>
             
-            <button id="downloadButton" style="display: none;">⬇️ Unduh Video</button>
+            <button id="downloadButton" style="display: none;"><i class="fas fa-download"></i></button>
         </div>
 
         <div class="progress" id="status">Pilih gambar dan atur opsi konversi.</div>
@@ -181,7 +192,8 @@
         </div>
     </div>
 
-  </div> <script>
+  </div> 
+  <script>
     // --- Elemen DOM ---
     const convertBtn = document.getElementById("convertBtn");
     const imageInput = document.getElementById("image");
@@ -193,7 +205,7 @@
     const initialContent = document.getElementById("initialContent");
     const previewImage = document.getElementById("previewImage");
     const videoPreview = document.getElementById("videoPreview");
-    const downloadButton = document.getElementById("downloadButton"); // Langsung ambil tombol
+    const downloadButton = document.getElementById("downloadButton"); 
 
     // --- State & Utility ---
     let selectedFile = null;
@@ -210,9 +222,9 @@
       videoPreview.pause();
       videoPreview.removeAttribute('src');
       videoPreview.load();
-      downloadButton.style.display = 'none'; // Sembunyikan tombol unduh
+      downloadButton.style.display = 'none'; 
       
-      if (!selectedFile) {
+      if (!selectedFile) { // Hanya aktifkan dropArea jika tidak ada file yang dipilih
         dropArea.classList.remove('disabled');
         initialContent.style.display = 'flex';
       }
@@ -227,7 +239,6 @@
         cleanup(); 
         selectedFile = file;
         
-        // Tampilkan preview gambar
         const reader = new FileReader();
         reader.onload = (e) => {
             previewImage.src = e.target.result;
@@ -252,7 +263,7 @@
 
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
       dropArea.addEventListener(eventName, preventDefaults, false);
-      if (!dropArea.classList.contains('disabled')) {
+      if (!dropArea.classList.contains('disabled')) { // Hanya tambahkan ini jika dropArea tidak disabled
         document.body.addEventListener(eventName, preventDefaults, false);
       }
     });
@@ -309,8 +320,8 @@
           videoPreview.src = videoUrl;
           videoPreview.style.display = 'block';
           previewImage.style.display = 'none'; 
-          downloadButton.style.display = 'block'; // Tampilkan tombol unduh
-          dropArea.classList.add('disabled'); // Nonaktifkan drop area saat preview aktif
+          downloadButton.style.display = 'flex'; // Gunakan flex untuk menengahkan ikon
+          dropArea.classList.add('disabled'); 
 
           statusEl.textContent = "✅ Selesai! Video siap di-preview dan diunduh.";
 
@@ -318,7 +329,7 @@
           downloadButton.onclick = () => {
             const a = document.createElement("a");
             a.href = videoUrl;
-            a.download = "hasil-video.mp4";
+            a.download = `video-${selectedResolution}-${durationInput.value}s.mp4`; // Nama file lebih informatif
             a.click();
           };
 
