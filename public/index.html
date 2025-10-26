@@ -7,7 +7,7 @@
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   
-  <style>
+<style>
     /* 1. Layout Responsif & Tema Terang */
     body { 
         font-family: system-ui, sans-serif; 
@@ -24,6 +24,7 @@
     .container { 
      /*   width: 100%; */
         max-width: 600px; 
+        width: 100%; /* Memastikan container selalu selebar mungkin hingga max-width */
         display: flex; 
         flex-wrap: wrap; 
         gap: 20px; 
@@ -34,9 +35,17 @@
         border-radius:12px; 
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         flex: 1 1 300px; 
-        min-width: 300px;
+        
+        /* --- PERBAIKAN PENTING UNTUK FLEXBOX --- */
+        /* Menghapus min-width: 300px; yang lama */
+        /* min-width: 0; memaksa item flex menyusut di bawah ukuran konten intrinsiknya */
+        min-width: 0; 
+        
         min-height: 200px; 
         box-sizing: border-box;
+        
+        /* Opsional: memastikan konten yang meluber tidak terlihat */
+        /* overflow: hidden; */ 
     }
     h2 { margin-top: 0; text-align: center; color: #111; }
 
@@ -82,6 +91,8 @@
         transition: opacity 0.3s;
     }
     #image { display: none; } 
+    
+    /* Pengecekan ulang pada elemen video/gambar */
     #previewImage, #videoPreview {
         position: absolute;
         top: 0;
@@ -91,8 +102,10 @@
         border-radius: 8px;
         display: none;
         object-fit: cover;
-      max-width: 100%; 
-      box-sizing: border-box; 
+        
+        /* Tambahan untuk memastikan batas lebar dipatuhi */
+        max-width: 100%; 
+        box-sizing: border-box;
     }
     #previewImage {
         object-fit: contain;
@@ -164,6 +177,7 @@
     .controls-group > div {
         display: flex;
         flex-direction: column;
+        flex: 1; /* Agar elemen di controls-group memiliki lebar yang sama */
     }
     
     /* Tombol Buat Video (Fleksibel) */
@@ -191,6 +205,7 @@
         color: #333; 
         box-sizing: border-box; 
         height: 40px;
+        width: 100%; /* Memastikan dropdown penuh di dalam divnya */
     }
     label { 
         font-size: 0.8em; 
@@ -218,16 +233,22 @@
         #convertBtn {
             margin-top: 10px;
             width: 100%;
+            align-self: auto;
         }
     }
 
-      @media (max-width: 700px) {
+    @media (max-width: 700px) {
         .container {
-            margin: 0 auto;
-            width: auto;
+            /* width: auto; tidak diperlukan karena sudah ada max-width: 600px dan width: 100% */
+            padding: 0 10px; /* Tambahkan sedikit padding jika diperlukan */
         }
-  }
+        /* Memaksa card mengambil lebar penuh pada layar kecil */
+        .card {
+            flex-basis: 100%;
+        }
+    }
   </style>
+        
 </head>
 <body>
   <div class="container">
