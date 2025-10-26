@@ -8,7 +8,7 @@ Banyak platform seperti **Instagram Reels, WhatsApp Status, dan Facebook Link Po
 
 1. **Optimasi Rasio Aspek:** Pilih langsung resolusi yang tepat, seperti:
 
-* **9:16 (1080x1920):** Sempurna untuk **Reels dan Status WhatsApp/Instagram.**
+* **9:16 (1080x1920):** Sempurna untuk **Reels** dan **Status WhatsApp/Instagram.**
 
 * **4:5 (1080x1350):** Ideal untuk **Feed** Instagram agar terlihat lebih besar.
 
