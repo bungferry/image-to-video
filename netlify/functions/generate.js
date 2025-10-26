@@ -1,12 +1,35 @@
 import fs from "fs";
 import path from "path";
 import ffmpeg from "fluent-ffmpeg";
-import ffmpegPath from "ffmpeg-static";
+import ffmpegStatic from "ffmpeg-static"; // Ubah penamaan import agar lebih jelas
+
+// --- Logika Penyesuaian Jalur FFmpeg untuk Netlify Lambda ---
+let ffmpegPath = ffmpegStatic;
+
+// Jika kode berjalan di lingkungan AWS Lambda (Netlify), sesuaikan jalur
+if (process.env.LAMBDA_TASK_ROOT) {
+    // Jalur biner yang seringkali digunakan setelah Netlify membundel ffmpeg-static
+    const functionRoot = process.env.LAMBDA_TASK_ROOT;
+    const binPath = path.join(functionRoot, 'node_modules', 'ffmpeg-static', 'ffmpeg');
+    
+    // Gunakan binPath jika ada, jika tidak, gunakan default ffmpegStatic
+    if (fs.existsSync(binPath)) {
+        ffmpegPath = binPath;
+    }
+}
+
+// Atur jalur FFmpeg
+ffmpeg.setFfmpegPath(ffmpegPath);
+
+// Berikan izin eksekusi (chmod) karena sering hilang saat di-deploy
+try {
+    fs.chmodSync(ffmpegPath, '755');
+} catch (e) {
+    console.error("Gagal mengatur izin eksekusi (chmod) FFmpeg:", e.message);
+}
+// -----------------------------------------------------------
 
 export const handler = async (event) => {
-  // Pastikan ffmpeg-static biner dapat diakses
-  ffmpeg.setFfmpegPath(ffmpegPath);
-  
   // Variabel untuk melacak file agar bisa dihapus meskipun terjadi error
   let inputPath = null;
   let outputPath = null;
@@ -18,7 +41,6 @@ export const handler = async (event) => {
     if (!imageBase64) throw new Error("Tidak ada file gambar.");
 
     const tmpDir = "/tmp";
-    // Tentukan path input dan output dengan unique ID
     const uniqueId = Date.now();
     inputPath = path.join(tmpDir, `input-${uniqueId}.jpg`);
     outputPath = path.join(tmpDir, `output-${uniqueId}.mp4`);
@@ -34,15 +56,16 @@ export const handler = async (event) => {
       ffmpeg(inputPath)
         // Gunakan input options yang lebih andal untuk gambar diam
         .inputOptions([
-          "-loop 1",       // Memberitahu ffmpeg untuk mengulang input (gambar)
-          "-t " + dur,     // Menetapkan durasi video (detik)
-          "-framerate 25", // Menetapkan framerate input
+          "-loop 1",       // Loop gambar
+          "-t " + dur,     // Durasi video
+          "-framerate 25", // Framerate input
         ])
         .videoCodec("libx264")
         .size("1920x1080")
         .outputOptions([
+          "-preset veryfast", // Optimasi kecepatan konversi
           "-pix_fmt yuv420p",
-          // Opsional: Gunakan scale/pad untuk memastikan gambar pas di 1920x1080
+          // Scale/pad untuk memastikan gambar pas di 1920x1080 tanpa distorsi
           "-vf scale='min(1920,iw):min(1080,ih):force_original_aspect_ratio=decrease,pad=1920:1080:-1:-1:color=black'"
         ])
         .save(outputPath)
@@ -50,12 +73,12 @@ export const handler = async (event) => {
           console.log("FFmpeg Selesai.");
           resolve();
         })
-        // Tangani error dengan mencatat stdout/stderr untuk debugging Netlify
+        // Tangani error dengan mencatat stdout/stderr
         .on("error", (err, stdout, stderr) => {
           console.error("FFmpeg Error:", err.message);
           console.error("FFmpeg Stdout:", stdout);
           console.error("FFmpeg Stderr:", stderr);
-          reject(new Error("Gagal konversi video: " + err.message));
+          reject(new Error("Gagal mengonversi video: " + err.message));
         });
     });
 
@@ -78,11 +101,9 @@ export const handler = async (event) => {
     // Pastikan file sementara dihapus
     if (inputPath && fs.existsSync(inputPath)) {
       fs.unlinkSync(inputPath);
-      console.log(`Deleted input: ${inputPath}`);
     }
     if (outputPath && fs.existsSync(outputPath)) {
       fs.unlinkSync(outputPath);
-      console.log(`Deleted output: ${outputPath}`);
     }
   }
 };
