@@ -1,7 +1,7 @@
 {
-  "name": "image-to-video",
+  "name": "image-to-video-netlify",
   "version": "1.0.0",
-  "main": "api/generate.js",
+  "type": "module",
   "dependencies": {
     "ffmpeg-static": "^4.4.0",
     "formidable": "^2.1.1"
