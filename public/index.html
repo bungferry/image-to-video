@@ -5,52 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Konversi Gambar ke Video (.mp4)</title>
   <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #121212;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .card {
-      background: #1e1e1e;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(255,255,255,0.1);
-      width: 90%;
-      max-width: 400px;
-      text-align: center;
-    }
-    input[type="file"] {
-      display: block;
-      margin: 10px auto;
-    }
-    input[type="range"] {
-      width: 100%;
-    }
-    button {
-      background: #0078ff;
-      border: none;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 10px;
-      width: 100%;
-    }
-    button:disabled {
-      background: #555;
-      cursor: not-allowed;
-    }
-    .progress {
-      margin-top: 15px;
-      font-size: 0.9em;
-      opacity: 0.8;
-    }
+    body { font-family: system-ui, sans-serif; background:#121212; color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; margin:0; }
+    .card { background:#1e1e1e; padding:20px; border-radius:12px; width:90%; max-width:400px; text-align:center; }
+    input[type="file"] { display:block; margin:10px auto; }
+    input[type="range"] { width:100%; }
+    button { background:#0078ff; border:none; color:white; padding:10px 20px; border-radius:8px; cursor:pointer; margin-top:10px; width:100%; }
+    button:disabled { background:#555; cursor:not-allowed; }
+    .progress { margin-top:15px; font-size:0.9em; opacity:0.8; }
   </style>
 </head>
 <body>
@@ -64,67 +25,49 @@
   </div>
 
   <script>
-  const convertBtn = document.getElementById("convertBtn");
-  const imageInput = document.getElementById("image");
-  const durationInput = document.getElementById("duration");
-  const durValue = document.getElementById("durValue");
-  const statusEl = document.getElementById("status");
+    const convertBtn = document.getElementById("convertBtn");
+    const imageInput = document.getElementById("image");
+    const durationInput = document.getElementById("duration");
+    const durValue = document.getElementById("durValue");
+    const statusEl = document.getElementById("status");
 
-  durationInput.oninput = () => (durValue.textContent = durationInput.value);
+    durationInput.oninput = () => (durValue.textContent = durationInput.value);
 
-  convertBtn.onclick = async () => {
-    const file = imageInput.files[0];
-    if (!file) {
-      alert("Pilih gambar dulu!");
-      return;
-    }
+    convertBtn.onclick = async () => {
+      const file = imageInput.files[0];
+      if (!file) { alert("Pilih gambar dulu!"); return; }
 
-    convertBtn.disabled = true;
-    statusEl.textContent = "⏳ Sedang diproses...";
+      convertBtn.disabled = true;
+      statusEl.textContent = "⏳ Sedang diproses...";
 
-    const formData = new FormData();
-    formData.append("image", file);
-    formData.append("duration", durationInput.value);
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result.split(",")[1];
+        try {
+          const res = await fetch("/.netlify/functions/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ imageBase64: base64, duration: durationInput.value })
+          });
 
-    try {
-      // ✅ gunakan path function Netlify
-      const res = await fetch("/.netlify/functions/generate", {
-        method: "POST",
-        body: formData,
-      });
+          if (!res.ok) throw new Error("Gagal mengonversi video");
 
-      if (!res.ok) {
-        const err = await res.text();
-        throw new Error(err || "Gagal mengonversi video");
-      }
-
-      // ✅ ambil base64 dan ubah ke Blob
-      const base64 = await res.text();
-      const byteChars = atob(base64.trim());
-      const byteNumbers = new Array(byteChars.length);
-      for (let i = 0; i < byteChars.length; i++) {
-        byteNumbers[i] = byteChars.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: "video/mp4" });
-
-      // ✅ download hasil
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "hasil-video.mp4";
-      a.click();
-      URL.revokeObjectURL(url);
-
-      statusEl.textContent = "✅ Selesai! Video berhasil diunduh.";
-    } catch (err) {
-      console.error(err);
-      statusEl.textContent = "❌ Terjadi kesalahan: " + err.message;
-    } finally {
-      convertBtn.disabled = false;
-    }
-  };
-</script>
-
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "hasil-video.mp4";
+          a.click();
+          URL.revokeObjectURL(url);
+          statusEl.textContent = "✅ Selesai! Video berhasil diunduh.";
+        } catch (err) {
+          statusEl.textContent = "❌ Terjadi kesalahan: " + err.message;
+        } finally {
+          convertBtn.disabled = false;
+        }
+      };
+      reader.readAsDataURL(file);
+    };
+  </script>
 </body>
 </html>
